@@ -69,7 +69,7 @@ Shortcut for viewing Docker logs from within the vagrant guest.
 
 ## configuration
 
-The recommended place to store configuration overrides is in `${WORK_ENV}/preactivate`
+Config goes in `${WORK_ENV}/config`
 
 ### resin-containers
 

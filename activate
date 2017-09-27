@@ -1,3 +1,5 @@
+test -r "${WORK_ENV}/config" && source "${WORK_ENV}/config"
+
 # lazily load nvm to keep environment activation snappy
 function _lazynvm {
     echo 'Loading `nvm`...'
