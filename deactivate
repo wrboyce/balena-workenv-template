@@ -1,0 +1,29 @@
+unset -f resin
+unset -f rs-env
+unset -f rs-update
+unset -f rs-login
+unset -f _get_resin_env
+unset -f wiki
+unset -f vv
+unset -f vcmd
+unset -f vdc
+unset -f vlog
+unset -f enter
+unset -f import-images
+
+unalias rs
+unalias ec
+unalias xc
+
+unset RESIN_ROOT
+
+unset RESIN_CONTAINERS
+unset RESIN_CLI
+unset RESIN_WIKI
+
+unset RESIN_DEVENV_BRIDGE
+unset RESIN_DEVENV_CPU
+unset RESIN_DEVENV_RAM
+
+unset RESIN_JENKINS_USER
+unset RESIN_JENKINS_API_KEY
