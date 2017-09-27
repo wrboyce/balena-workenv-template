@@ -165,8 +165,3 @@ alias rs=resin
 alias ec="${EDITOR-vim} '${RESIN_CONTAINERS}/docker-compose.yml'"
 # diff the compose file
 alias xc="(cd '${RESIN_CONTAINERS}' && git diff -- docker-compose.yml)"
-
-## golang settings
-export GOPATH=${RESIN_ROOT}/.go
-mkdir -p ${GOPATH}/src/github.com/resin-io/
-test -d ${RESIN_ROOT}/containers/src/go || ln -s ${GOPATH}/src/github.com/resin-io ${RESIN_ROOT}/containers/src/go
