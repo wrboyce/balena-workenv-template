@@ -1,0 +1,7 @@
+# vim: filetype=zsh
+
+# add bob devices key to ssh agent
+
+# function bob-ssh-add {
+    ssh-add "$@" "${BALENA_BOB}/keys/device-keys/device_key"
+# }

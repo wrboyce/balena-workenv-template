@@ -1,0 +1,8 @@
+# vim: filetype=zsh
+
+# remove service ignore exception
+# function __bob_del_ignore_exception {
+    local service="$1"
+    __bob_init_ignore
+    gsed -i -e "/# BEGIN-BOB-BUILD/,/# END-BOB-BUILD/{/!\/src\/${service}/d}" "${BALENA_BOB}/.dockerignore"
+# }

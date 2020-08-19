@@ -1,0 +1,36 @@
+# vim: filetype=zsh
+
+# connect to devices via balena-proxy:sshproxy
+
+# function balena-enter {
+    local env="prod"
+    while getopts E: opt; do
+        case "${opt}" in
+            E) env="${OPTARG}" ;;
+            *) ;;
+        esac
+    done
+    shift $((OPTIND-1))
+    
+    local host
+    case "${env}" in
+        prod|cloud) host="ssh.balena-devices.com" ;;
+        stag|staging) host="ssh.balena-staging-devices.com" ;;
+        dev) host="devices.balena-dev.com" ;;
+        bob) host="devices.${BALENA_BOB_DOMAIN}" ;;
+        *)
+            echo "ERROR: Unknown ENV"
+            return
+            ;;
+    esac
+
+    local command="host"
+    local device_uuid="$1"
+    local container_id="$2"
+    [ -n "${container_id}" ] && command="enter"
+    ssh -t -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        "${host}" \
+        "$command" \
+        "$device_uuid" \
+        "$container_id"
+# }

@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+set -e
+
+issues=()
+while [[ "$1" =~ [0-9]+ ]]; do
+    issues+=("$1")
+    shift
+done
+change_type=
+if [[ "$1" =~ major|minor|patch ]]; then
+    change_type=$1
+    shift
+fi
+git commit "$@"
+for issue in "${issues[@]}"; do
+    GIT_EDITOR="git interpret-trailers --trailer \"Connects-to: #${issue}\" --in-place" git commit --amend --no-verify --quiet
+done
+test -n "${change_type}" && GIT_EDITOR="git interpret-trailers --trailer \"Change-type: ${change_type}\" --in-place" git commit --amend --no-verify --quiet
+git commit --amend --no-edit --signoff --gpg-sign --no-verify --quiet

@@ -1,0 +1,19 @@
+# vim: filetype=zsh
+
+# update balena-on-balena / bob-cli to latest master
+
+# function bob-upgrade {
+    (
+        local stashed=0
+        cd "${BALENA_BOB}"
+        git fetch
+        if [ -n "$(git status --untracked-files=no --porcelain)" ]; then 
+            git stash -q
+            stashed=1
+        fi
+        git rebase origin/master
+        (( ${stashed} )) && git stash pop -q
+        cd ./bob-cli
+        npm ci
+    )
+# }

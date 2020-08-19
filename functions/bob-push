@@ -1,0 +1,7 @@
+# vim: filetype=zsh
+
+# push latest code to bob
+
+# function bob-push {
+    balena push --source "${BALENA_BOB}" --multi-dockerignore "${BALENA_BOB_HOST}" "$@"
+# }

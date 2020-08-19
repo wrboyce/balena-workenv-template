@@ -1,0 +1,13 @@
+# vim: filetype=zsh
+
+# helper function for switching between devops contexts
+
+# function balena-aws() {
+(
+    set -eu
+    export AWS_PROFILE="balena-$1"
+    SAML2AWS_MFA=TOTP saml2aws login -a "${AWS_PROFILE}" -p "${AWS_PROFILE}" --skip-prompt
+    kubectl config use-context "${AWS_PROFILE}"
+    aws sts get-caller-identity | jq
+)
+# }

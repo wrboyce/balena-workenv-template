@@ -1,0 +1,11 @@
+# vim: filetype=zsh
+
+# interactive/searchable devops playbook
+
+# function balena-devops-playbook {
+	local playbook="${BALENA_DEVOPS_ROOT}/playbook/playbook.json"
+	catcmd=("cat")
+	(( ${+commands[bat]} )) && catcmd=("bat" "--language=markdown" "--pager=never" "--color=always" "--style=plain")
+	local cmd="jq -r '.DevOpsPlaybook[] | select(.Title | contains(\"{r}\")) | \"## \(.Title)\n\n\(.Solution)\"' "${playbook}" | "${catcmd[@]}""
+	jq -r '.DevOpsPlaybook[] | delpaths([path(select(.Solution==null))]) | "\(.Title)"' < "${playbook}" | ~/Source/fzf/bin/fzf --print-query --preview="${cmd}" --bind="enter:execute(clear;${cmd})+abort"
+# }

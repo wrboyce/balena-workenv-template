@@ -1,167 +1,27 @@
+# vim: filetype=zsh
+
+# load config, if it exists
 test -r "${WORK_ENV}/config" && source "${WORK_ENV}/config"
 
-# lazily load nvm to keep environment activation snappy
-function _lazynvm {
-    echo 'Loading `nvm`...'
-    unset -f _lazynvm
-    unset -f node
-    unset -f npm
-    source /usr/local/opt/nvm/nvm.sh
-}
-function node {
-    _lazynvm
-    node "$@"
-}
-function npm {
-    _lazynvm
-    npm "$@"
-}
+# default settings, override any of these in ./config
+BALENA_BOB_HOST="${BALENA_BOB_HOST-10.10.10.10}"
+BALENA_BOB_DOMAIN="${BALENA_BOB_DOMAIN-balena-dev.com}"
+BALENA_ROOT="${BALENA_ROOT-"${WENV_PROJ}"}"
+BALENA_CLI="${BALENA_CLI-"${BALENA_ROOT}/cli"}"
+BALENA_BOB="${BALENA_BOB-"${BALENA_ROOT}/bob"}"
+BALENA_BOB_ADMIN_USERNAME="${BALENA_BOB_ADMIN_USERNAME-"$(whoami)"}"
+BALENA_BOB_DOCKER_MIRROR="${BALENA_BOB_DOCKER_MIRROR-}"
+BALENA_DEVOPS_ROOT="${BALENA_DEVOPS_ROOT-"${BALENA_ROOT}/devops"}"
+BALENA_OS_ROOT="${BALENA_OS_ROOT-"${BALENA_ROOT}/os"}"
+BALENA_OS_BUILD_SERVER="${BALENA_OS_BUILD_SERVER-misc1.dev.balena.io}"
+export GIT_COMMITTER_EMAIL="${GIT_COMMITTER_EMAIL-"${USERNAME}@balena.io"}"
+export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL-"${USERNAME}@users.github.com"}"
 
-RESIN_ROOT="${RESIN_ROOT-"${WENV_PROJ}"}"
-RESIN_CONTAINERS="${RESIN_CONTAINERS-"${RESIN_ROOT}/containers"}"
-RESIN_CLI="${RESIN_CLI-"${RESIN_ROOT}/cli"}"
-RESIN_WIKI="${RESIN_WIKI-"${RESIN_ROOT}/hq.wiki"}"
-RESIN_WIKI_GREP="${RESIN_WIKI_GREP-rg}"
+# setup some named directories
+hash -d balena="${BALENA_ROOT}"
+hash -d bob="${BALENA_BOB}"
+hash -d devops="${BALENA_DEVOPS_ROOT}"
+hash -d os="${BALENA_OS_ROOT}"
 
-function rs-env {
-    local slug=$1
-    case $1 in
-        ""|help)
-            echo "USAGE: $0 <prod|stag|dev|*> [url]"
-            echo "set the resin-cli environment"
-            return 1
-            ;;
-        prod)
-            export RESINRC_RESIN_URL=resin.io
-            ;;
-        stag)
-            export RESINRC_RESIN_URL=resinstaging.io
-            ;;
-        dev)
-            export RESINRC_RESIN_URL=resindev.io
-            ;;
-        *)
-            if test -z "$2"; then
-                echo "USAGE: $0 $1 <url>"
-                return 1
-            fi
-            export RESINRC_RESIN_URL=$2
-            ;;
-    esac
-    local token_path="${HOME}/.resin/token"
-    local env_token_path="${token_path}.${slug}"
-    rm "${token_path}"
-    ln -s "${env_token_path}" "${token_path}"
-    export VIRTUAL_ENV_LABEL="${slug}"
-}
-
-# wrap `resin login` to keep token symlinks updated
-function rs-login {
-    local token_path="${HOME}/.resin/token"
-    local env_token_path="${token_path}.$(_get_resin_env)"
-    node "${RESIN_CLI}/bin/resin" login "$@"
-    mv "${token_path}" "${env_token_path}"
-    ln -s "${env_token_path}" "${token_path}"
-}
-
-function _get_resin_env {
-    local token_path="${HOME}/.resin/token"
-    local token="$(basename "$(readlink "${token_path}")")"
-    local slug="${token/token./}"
-    echo -n "${slug}"
-}
-
-## vagrant shortcut
-function vv {
-    (cd "${RESIN_CONTAINERS}" && vagrant "$@")
-}
-compdef _vagrant vv
-
-## run a command inside vagrant
-function vcmd {
-	vv ssh -c "$*"
-}
-
-## docker-compose shortcut (run inside container guest)
-function vdc {
-    case $1 in
-        upd)
-            vdc pull && vdc up --daemon
-            ;;
-        build)
-            vdc up --daemon --build $2
-            ;;
-        *)
-            vcmd "docker-compose -f ~/resin/docker-compose.yml $*"
-            ;;
-    esac
-}
-
-## open a bash shell on the specified container
-function enter {
-    local service=$1
-    local cmd=$2
-    if test -z "${cmd}"; then
-        cmd="/bin/bash"
-    else
-        cmd="/bin/bash -c \"${cmd}\""
-    fi
-    [ "${service}" = "proxy" ] && service=devices
-    local container="resin_${service}_1"
-    vcmd "docker exec -it ${container} ${cmd}"
-}
-
-## watch logs of a service running on docker inside vagrant
-function vlog {
-    local service=$1
-    [ "${service}" = "proxy" ] && service=devices
-    vcmd "docker exec -it resin_${service}_1 journalctl -f $*"
-}
-
-## helper function for running `import-images` on vagrant guest
-function import-images {
-    cmd="cd resin/tools/import-images && ./import-images.coffee"
-    test -z "${RESIN_JENKINS_API_KEY}" || cmd="${cmd} -J '${RESIN_JENKINS_USER-$(whoami)}:${RESIN_JENKINS_API_KEY}'"
-    vcmd "(${cmd} $*)"
-}
-
-## resin wrapper which checks for `resin-$1 $2 $3...$n` command first
-function resin {
-    if which "rs-${1}" >/dev/null 2>&1; then
-        local cmd="rs-${1}"; shift
-        $cmd "$@"
-    else
-        node "${RESIN_CLI}/bin/resin" "$@"
-    fi
-}
-
-## add a `resin update` subcommand for handling resin-cli updates/versions
-function rs-update {
-    local version=$1
-    if test -z "${version}"; then
-        (cd "${RESIN_CLI}" && git fetch && git reset --hard "${version}" && npm install)
-    else
-        (cd "${RESIN_CLI}" && git pull origin master && npm install)
-    fi
-}
-
-## search resin-io/hq/wiki
-function wiki {
-    local context=5
-    if [ -n $1 ] && [[ "$1" = <-> ]] && [ -n $2 ]; then
-        context="$1"
-        shift
-    fi
-    (cd "${RESIN_WIKI}" && git pull --quiet && "${RESIN_WIKI_GREP}" -C${context} "$*")
-}
-
-# setup current resin env
-resin env "$(_get_resin_env)"
-
-## handy aliases
-# shortcut for `resin`
-alias rs=resin
-# edit the compose file
-alias ec="${EDITOR-vim} '${RESIN_CONTAINERS}/docker-compose.yml'"
-# diff the compose file
-alias xc="(cd '${RESIN_CONTAINERS}' && git diff -- docker-compose.yml)"
+# include BoB ca in node cert trust
+export NODE_EXTRA_CA_CERTS="${BALENA_BOB}/keys/haproxy-certs/ca.pem"

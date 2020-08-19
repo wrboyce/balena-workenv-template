@@ -1,0 +1,17 @@
+# vim: filetype=zsh
+
+# pull bob service from `latest` tagged image
+
+# function bob-unbuild {
+    local composefile service image
+    composefile="${BALENA_BOB}/docker-compose.yml"
+    service=$1; shift
+    [ "${service}" = "proxy" ] && service="devices"
+    image="$(yq r "${composefile}" "x-images.${service}")"
+    if [ "${image}" != "" ]; then
+        yq d -i "${composefile}" "services.${service}.build"
+        yq d -i "${composefile}" "x-images.${service}"
+        yq w -i "${composefile}" "services.${service}.image" "${image}"
+        __bob_del_ignore_exception "${service}"
+    fi
+# }

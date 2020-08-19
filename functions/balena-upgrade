@@ -1,0 +1,18 @@
+# vim: filetype=zsh
+
+# update balena-cli to the given version (or latest if not specified)
+
+# function balena-upgrade {
+    local version="${1-latest}"
+    git -C "${BALENA_CLI}" fetch --tags --quiet
+    [ "${version}" = "latest" ] && version="$(git -C "${BALENA_CLI}" tag -l | grep '^v' | sort -Vr | head -1)"
+    (
+        set -e
+        cd "${BALENA_CLI}"
+        git fetch --quiet
+        git restore npm-shrinkwrap.json
+        git checkout "${version}"
+        npm install
+        npm run build
+    )
+# }

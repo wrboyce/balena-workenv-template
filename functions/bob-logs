@@ -1,0 +1,15 @@
+# vim: filetype=zsh
+
+# tail bob logs
+
+# function bob-logs {
+    local arg args=("--tail")
+    for arg in "$@"; do
+        if [ "${arg}" = "system" ]; then
+            args+=("--system")
+        else
+            args+=("--service" "${arg}")
+        fi
+    done
+    balena logs "${BALENA_BOB_HOST}" "${args[@]}"
+# }

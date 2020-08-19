@@ -1,0 +1,17 @@
+# vim: filetype=zsh
+
+# initialise bob ignore file with BOB-BUILD block
+
+# function __bob_init_ignore {
+    touch "${BALENA_BOB}/.dockerignore"
+    if [ "${1-false}" = "true" ]; then
+        gsed -i '/^# BEGIN-BOB-BUILD/,/^# END-BOB-BUILD/d' "${BALENA_BOB}/.dockerignore"
+    fi
+    if ! grep -q '^# BEGIN-BOB-BUILD$' "${BALENA_BOB}/.dockerignore"; then
+        (
+            echo '# BEGIN-BOB-BUILD'
+            echo '/src/*'
+            echo '# END-BOB-BUILD'
+        ) >> "${BALENA_BOB}/.dockerignore"
+    fi
+# }

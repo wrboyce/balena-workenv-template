@@ -1,116 +1,116 @@
-# resin-workenv-template
+# balena-workenv-template
 
-A [zsh-workenv](https://github.com/wrboyce/zsh-workenv) template for resin.io development.
+A [zsh-workenv](https://github.com/wrboyce/zsh-workenv) template for Balena development.
 
-## installation
+## Installation
 
 Create a new working environment using this repository as the template
 
 ```bash
-WENV_TEMPLATE="https://github.com/wrboyce/resin-workenv-template.git" mkwenv <wenv-name> [wenv-project]
+WENV_TEMPLATE="https://github.com/wrboyce/balena-workenv-template.git" mkwenv <wenv-name> [wenv-project-dir]
 ```
 
-## usage
+## Usage
 
-### `resin env <env-name> [env-url]`
+### `balena aws <context>`
 
-Automatic environment switching and token handling for [`resin-cli`](https://github.com/resin-io/resin-cli).
+Switch AWS and K8s contexts between production / staging / playground.
 
-`env-url` is optional if `env-name` is one of `prod`, `stag`, or `dev`.
+### `balena devops-playbook`
 
-### `resin update [version]`
+Launch an interactive devops playbook using `fzf`, unfortuantely requires [my fork of `fzf`](https://github.com/junegunn/fzf/pull/1867) currently.
 
-Update `resin-cli` to the specified version. If no version is specified, update to the latest master build.
+### `balena enter [-E <env-name>] <uuid> [container-id]`
 
-### `wiki [context] <search-term>`
+Connect to the given device, on the given environment, via ssh.
 
-Search the [resin wiki](https://github.com/resin-io/hq/wiki). If the first argument is numeric it will be treated as a context argument.
+### `balena env <env-name>`
 
-### `import-images`
+Automatic environment switching and token handling for [`balena-cli`](https://github.com/balena-io/balena-cli).
 
-Wrapper around the `import-images` tool, automatically providing [jenkins credentials](#jenkins).
+A valid `env-name` is one of `prod`/`cloud`, `stag`/`staging`, `dev`, or `bob`.
 
-### `rs`
+### `balena envs`
 
-Shortcut to `resin`.
+List available/active balena-cli environments.
 
-### `ex`, `xc`
+### `balena upgrade [version]`
 
-Shortcuts to edit/diff the `resin-containers/docker-compose.yml` file.
+Update `balena-cli` to the specified version. If no version is specified, use the latest tagged version.
 
-### `vv`
+### `bob bootstrap`
 
-Shortcut for running `vagrant` commands against `resin-containers` guest.
+Create `/usr/local/bin/enter` on BoB host for easy container access, and optionally configure balena-engine
+with a Docker registry mirror (defined by `BALENA_BOB_REGISTRY_MIRROR`)
 
-### `vcmd <cmd>`
+### `bob build <service>`
 
-Run `cmd` on the `resin-containers` vagrant guest.
+Mark a service for building in the bob composefile.
 
-### `vdc`
+### `bob import-image <device-type> <version> [file]`
 
-Shortcut for running `docker-compose` on the `resin-containers` vagrant guest, supports two
-convenience commands:
+Import an OS image into BoB either from staging or the provided image.
 
-#### `vdc upd`
+### `bob logs [service|"system"]`
 
-Shortcut for `vdc pull && vdc up --daemon`
+Stream logs from BoB.
 
-#### `vdc build`
+### `bob push [...]`
 
-Shortcut for `vdc up --daemon --build`
+Push the latest changes to BoB; operates in live mode and pushes all services by default.
 
-#### `enter`
+### `bob reinit`
 
-Shortcut for running `enter` on the vagrant guest.
+Reinitialise the BoB composefile and dockerignore.
 
-#### `vlog`
+### `bob ssh [...]`
 
-Shortcut for viewing Docker logs from within the vagrant guest.
+Open an SSH connection to the BoB host, optionally sending a command.
 
-## configuration
+### `bob ssh-add [...]`
+
+Add the BoB devices key to the SSH Agent.
+
+### `bob unbuild <service>`
+
+Pull the given service from the latest tagged Docker image.
+
+### `bob upgrade [version]`
+
+Rebase `balena-on-balena` against `origin/master` and recompile `bob-cli`.
+
+## Configuration
 
 Config goes in `${WORK_ENV}/config`
 
-### resin-containers
-
-#### `RESIN_ROOT`
+### `BALENA_ROOT`
 
 Default: `${WENV_PROJ}`
 
-#### `RESIN_CLI`
+### `BALENA_BOB`
 
-Default: `${RESIN_ROOT}/cli`
+Default: `${BALENA_ROOT}/bob`
 
-#### `RESIN_CONTAINERS`
+### `BALENA_BOB_HOST`
 
-Default: `${RESIN_ROOT}/containers`
+Default: `10.10.10.10`
 
-#### `RESIN_WIKI`
+### `BALENA_BOB_DOMAIN`
 
-Default: `${RESIN_ROOT}/hq.wiki`
+Default: `balena-dev.com`
 
-#### `RESIN_WIKI_GREP`
+### `BALENA_BOB_REGISTRY_MIRROR`
 
-Default: `rg`
+Default: `None`
 
-The `grep`-style command used for searching the wiki, defaults to `ripgrep`.
+### `BALENA_CLI`
 
-### Vagrant
+Default: `${BALENA_ROOT}/cli`
 
-#### `RESIN_DEVENV_BRIDGE`, `RESIN_DEVENV_CPU`, `RESIN_DEVENV_MEM`
+### `GIT_COMMITTER_EMAIL`
 
-Default: `none`
+Default: `${USERNAME}@balena.io`
 
-Used by the [resin-containers](https://github.com/resin-io/resin-containers) `Vagrantfile` to specify guest configurations.
+### `GIT_AUTHOR_EMAIL`
 
-### Jenkins
-
-Used by `import-images` when grabbing device images from Jenkins.
-
-#### `RESIN_JENKINS_USER`
-
-Default: `$(whoami)`
-
-#### `RESIN_JENKINS_API_KEY`
-
-Default: `none`
+Default: `${USERNAME}@users.github.com`

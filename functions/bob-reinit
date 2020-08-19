@@ -1,0 +1,17 @@
+# vim: filetype=zsh
+
+# regenerate bob docker-compose and dockerignore
+
+# function bob-reinit {
+    local template="docker-compose-devenv.yml"
+    if [[ "${BALENA_BOB_DOMAIN}" = *.local ]]; then
+        template="docker-compose-devenv-local.yml"
+    fi
+
+    (
+        cd "${BALENA_BOB}"
+        bob init "${BALENA_BOB_DOMAIN}" --dc-template="${BALENA_BOB}/defaults/${template}"
+    )
+    [ -n "${BALENA_BOB_ADMIN_USERNAME}" ] && yq w -i "${BALENA_BOB}/docker-compose.yml" services.api.environment.ADMIN_LIST "${BALENA_BOB_ADMIN_USERNAME}"
+    __bob_init_ignore true
+# }

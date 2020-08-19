@@ -1,0 +1,52 @@
+# vim: filetype=zsh
+
+# switch `balena-cli` env
+
+# function balena-env {
+    local verify=1
+    while getopts n opt; do
+        case "${opt}" in
+            n) verify=0 ;;
+            *) ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local url
+    case $1 in
+        ""|help)
+            echo "USAGE: $0 <cloud|staging|dev|bob|[url]>"
+            echo "set the balena-cli environment"
+            return 1
+            ;;
+        prod|cloud)
+            url=balena-cloud.com
+            ;;
+        stag|staging)
+            url=balena-staging.com
+            ;;
+        dev)
+            url=balena-dev.com
+            ;;
+        bob)
+            url="${BALENA_BOB_DOMAIN}"
+            ;;
+        *)
+            if test -z "$2"; then
+                echo "USAGE: $0 $1 <url>"
+                return 1
+            fi
+            url=$1
+            ;;
+    esac
+    yq write -i ~/.balenarc.yml balenaUrl "${url}"
+    local env_slug="$(__balena_env_get_slug)"
+    local token_path="${HOME}/.balena/token"
+    local env_token_path="${token_path}.${env_slug}"
+    ln -fvs "${env_token_path}" "${token_path}"
+    if (( verify )); then
+        if ! balena whoami 2>/dev/null; then
+            balena login && balena whoami
+        fi
+    fi
+# }

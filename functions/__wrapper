@@ -1,0 +1,16 @@
+# vim: filetype=zsh
+
+# a wrapper around balena-cli/bob-cli allowing for git-style subcommands via aliases, commands, and functions
+
+local cmd="${0}-${1}"
+if (( $+aliases[$cmd] )) || (( $+commands[$cmd] )) || (( $+functions[$cmd] )); then
+    shift
+    "$cmd" "$@"
+else
+    local bin
+    case "${0}" in
+        balena) bin="${BALENA_CLI}/bin/balena" ;;
+        bob) bin="${BALENA_BOB}/bob-cli/bin/bob-cli" ;;
+    esac
+    node "${bin}" "$@"
+fi

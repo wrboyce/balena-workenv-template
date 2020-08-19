@@ -1,0 +1,7 @@
+# vim: filetype=zsh
+
+# list available `balena-cli` envs
+
+# function balena-envs {
+    ls -lhFv "${HOME}/.balena/token"*(N)
+#}

@@ -1,0 +1,22 @@
+# vim: filetype=zsh
+
+# function __balena_env_get_slug {
+    local env_url="$(yq read ~/.balenarc.yml balenaUrl)"
+    case "${env_url}" in
+        balena-cloud.com)
+            echo -n "cloud"
+            ;;
+        balena-staging.com)
+            echo -n "staging"
+            ;;
+        balena-dev.com)
+            echo -n "dev"
+            ;;
+        "${BALENA_BOB_DOMAIN}")
+            echo -n "bob"
+            ;;
+        *)
+            echo -n "${env_url}"
+            ;;
+    esac
+# }

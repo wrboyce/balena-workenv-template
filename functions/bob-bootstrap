@@ -1,0 +1,42 @@
+# vim: filetype=zsh
+
+# bootstrap a bob host with an `enter` command for accessing containers
+# and optionally configuring a docker registry mirror
+
+# this whole function is pretty ugly, but it works (for me!).
+
+# balena_bob_enter contents:
+    # #!/usr/bin/env bash
+    # set -eu
+
+    # if [ -z "${1-}" ]; then
+    # 	echo "USAGE: enter <container>"
+    # 	exit 1
+    # fi
+    # containers=($(balena ps -q --filter name="$1" 2>/dev/null || true))
+    # if [ "${#containers[@]}" -ne 1 ]; then
+    # 	echo "ERROR: cannot find container '$1'"
+    # 	if [ "${#containers[@]}" -gt 1 ]; then
+    # 		echo
+    # 		balena ps --filter name="$1"
+    # 	fi
+    # 	exit 1
+    # fi
+    # exec balena exec -it "${containers[0]}" "${2-/bin/bash}"
+balena_bob_enter="IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLWV1CgppZiBbIC16ICIkezEtfSIgXTsgdGhlbgoJZWNobyAiVVNBR0U6IGVudGVyIDxjb250YWluZXI+IgoJZXhpdCAxCmZpCmNvbnRhaW5lcnM9KCQoYmFsZW5hIHBzIC1xIC0tZmlsdGVyIG5hbWU9IiQxIiAyPi9kZXYvbnVsbCB8fCB0cnVlKSkKaWYgWyAiJHsjY29udGFpbmVyc1tAXX0iIC1uZSAxIF07IHRoZW4KCWVjaG8gIkVSUk9SOiBjYW5ub3QgZmluZCBjb250YWluZXIgJyQxJyIKCWlmIFsgIiR7I2NvbnRhaW5lcnNbQF19IiAtZ3QgMSBdOyB0aGVuCgkJZWNobwoJCWJhbGVuYSBwcyAtLWZpbHRlciBuYW1lPSIkMSIKCWZpCglleGl0IDEKZmkKZXhlYyBiYWxlbmEgZXhlYyAtaXQgIiR7Y29udGFpbmVyc1swXX0iICIkezItL2Jpbi9iYXNofSIK"
+
+cmds=("#!/usr/bin/env bash" "set -ex")
+cmds+=('trap "rm \"$0\"; mount -o remount,ro /; exit" EXIT INT')
+cmds+=("mount -o remount,rw /")
+cmds+=("echo 'export HISTFILE=/mnt/data/bash_history' > ~/.profile")
+cmds+=("mkdir -p /usr/local/bin" "echo ${balena_bob_enter} | base64 -d >/usr/local/bin/enter" "chmod +x /usr/local/bin/enter")
+cmds+=("test -f /etc/balena/daemon.json || echo '{}' > /etc/balena/daemon.json")
+if [ -z "${BALENA_BOB_DOCKER_MIRROR}" ]; then
+    cmds+=("[ \"${mirror}\" = \"\" ] && jq </etc/balena/daemon.json >/tmp/daemon.json 'del(.[\"registry-mirrors\"])'")
+else
+    cmds+=("jq </etc/balena/daemon.json >/tmp/daemon.json --arg mirror \"${BALENA_BOB_DOCKER_MIRROR}\" '.[\"registry-mirrors\"][0] = \$mirror'")
+fi
+cmds+=("mv /tmp/daemon.json /etc/balena/daemon.json")
+cmds+=("systemctl restart balena")
+echo "Bootstrapping ${BALENA_BOB_HOST}..."
+echo "${(j:\n:)cmds[@]}" | base64 | bob ssh 'base64 -d >/tmp/bootstrap.sh && chmod +x /tmp/bootstrap.sh && /tmp/bootstrap.sh'

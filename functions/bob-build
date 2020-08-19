@@ -1,0 +1,19 @@
+# vim: filetype=zsh
+
+# mark a bob service for building from source
+
+# function bob-build {
+    local composefile service src_path image
+    composefile="${BALENA_BOB}/docker-compose.yml"
+    service=$1; shift
+    src_path="./src/${service}"
+    [ "${service}" = "proxy" ] && service="devices"
+    image="$(yq r "${composefile}" "x-images.${service}")"
+    if [ "${image}" = "" ]; then
+        image="$(yq r "${composefile}" "services.${service}.image")"
+        yq d -i "${composefile}" "services.${service}.image"
+        yq w -i "${composefile}" "x-images.${service}" "${image}"
+        yq w -i "${composefile}" "services.${service}.build" "${src_path}"
+        __bob_add_ignore_exception "${service}"
+    fi
+# }

@@ -1,0 +1,67 @@
+# vim: filetype=zsh
+
+# import an OS image into bob either from staging or a local file
+
+# function bob-import-image {
+    local auth=1
+    while getopts n opt; do
+        case "${opt}" in
+            n) auth=0 ;;
+            *) ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    local device_type version local_file access_key secret_key admin_key env username
+    device_type=$1
+    version=$2
+    if [ -z "${version}" ]; then
+        echo "USAGE: bob-import-device <device-type> <version> [file]"
+        return 1
+    fi
+    shift; shift
+
+    args=("--device-type=${device_type}" "--device-build-version=${version}")
+    [[ "${version}" = *+rev* ]] || args+=("--esr")
+    if [ -f "$1" ]; then
+        local_file="$1"; shift
+        args+=("--local-image=${local_file}")
+        if [[ "${local_file}" = *-dev-* ]]; then
+            args+=("--device-edition=dev")
+        else
+            args+=("--device-edition=prod")
+        fi
+    fi
+
+    if (( auth )); then
+        # ensure the balena-cli token for bob env works and smells like an admin
+        # we do this because the import takes forever and can fail *after* the fact if the creds are invalid
+        env="$(__balena_env_get_slug)"
+        if [ "${env}" != "bob" ]; then
+            balena env -n bob >/dev/null
+            trap "balena env \"${env}\" >/dev/null" EXIT INT
+        fi
+        # this is fairly hacky, it would be much nicer to just query the API and ask if we are an admin...
+        username="$(balena whoami 2>/dev/null | awk '/^USERNAME/{print $2}')"
+        if [ -z "${username}" ]; then
+            echo "ERROR: Invalid auth token, bailing."
+            return 1
+        fi
+        # this is not wholly reliable because the matching is very fuzzy and it could be set here but not yet in the API
+        if [[ "$(yq r bob/docker-compose.yml services.api.environment.ADMIN_LIST)" != *${username}* ]]; then
+            echo "ERROR: User does not appear to be an admin, bailing."
+            return 1
+        fi
+        admin_key="$(cat "${HOME}/.balena/token")"
+        args+=("--admin-api-key=${admin_key}")
+    fi
+    
+    access_key="$(yq r "${BALENA_BOB}/docker-compose.yml" "services.s3.environment.S3_MINIO_ACCESS_KEY")"
+    secret_key="$(yq r "${BALENA_BOB}/docker-compose.yml" "services.s3.environment.S3_MINIO_SECRET_KEY")"
+    bob device-import \
+        "${BALENA_BOB_DOMAIN}" \
+        --s3-access-key="${access_key}" \
+        --s3-secret-key="${secret_key}" \
+        --storage-backend=staging \
+        "${args[@]}" "$@"
+# }

@@ -1,0 +1,9 @@
+# vim: filetype=zsh
+
+# ssh to bob host
+
+# function bob-ssh {
+    args=()
+    tty &>/dev/null && args+=("-t")
+    ssh -o Port=22222 -o StrictHostKeyChecking=false -o UserKnownHostsFile=/dev/null "${args[@]}" "root@${BALENA_BOB_HOST}" "$@"
+# }
